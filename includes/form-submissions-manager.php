@@ -172,11 +172,7 @@ class FormSubmissionsManager {
                                 <td><?php echo date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($submission->submitted_at)); ?></td>
                                 <td>
                                     <a href="#" class="delete-submission" data-id="<?php echo $submission->id; ?>">Supprimer</a> |
-                                    <a href="#" class="export-submission" 
-                                       data-submission="<?php echo esc_attr($submission->id); ?>"
-                                       data-nonce="<?php echo wp_create_nonce('export_submission_' . $submission->id); ?>">
-                                        Exporter
-                                    </a>
+                                    <a href="#" class="export-submission" data-id="<?php echo $submission->id; ?>">Exporter</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -281,50 +277,6 @@ class FormSubmissionsManager {
         exit;
     }
     
-}
-
-function exportSubmissionsToCSV($submissions) {
-    if (empty($submissions)) {
-        return;
-    }
-
-    // Définir les en-têtes HTTP pour le téléchargement du fichier CSV
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="submissions.csv"');
-
-    // Ouvrir un flux en sortie
-    $output = fopen('php://output', 'w');
-
-    // Ajouter une ligne d'en-têtes au fichier CSV
-    fputcsv($output, ['ID', 'Formulaire', 'Données', 'Date de soumission', 'Statut']);
-
-    // Ajouter les données des soumissions
-    foreach ($submissions as $submission) {
-        $form = get_post($submission->form_id);
-        $form_title = $form ? $form->post_title : 'Formulaire supprimé';
-        $submitted_data = json_decode($submission->submitted_data, true);
-
-        // Convertir les données soumises en une chaîne lisible
-        $data_string = '';
-        if (is_array($submitted_data)) {
-            foreach ($submitted_data as $key => $value) {
-                $data_string .= "{$key}: {$value}; ";
-            }
-        }
-
-        // Ajouter une ligne pour chaque soumission
-        fputcsv($output, [
-            $submission->id,
-            $form_title,
-            $data_string,
-            $submission->submitted_at,
-            $submission->status
-        ]);
-    }
-
-    // Fermer le flux et terminer le script
-    fclose($output);
-    exit;
 }
 
 // Initialiser le gestionnaire
