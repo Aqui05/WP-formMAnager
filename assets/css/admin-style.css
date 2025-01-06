@@ -1,0 +1,23 @@
+/* assets/css/admin-style.css */
+.wp-list-table .column-cb {
+    width: 3%;
+}
+
+.wp-list-table td ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.wp-list-table td ul li {
+    margin-bottom: 5px;
+}
+
+.delete-submission {
+    color: #dc3232;
+    text-decoration: none;
+}
+
+.delete-submission:hover {
+    color: #990000;
+}
