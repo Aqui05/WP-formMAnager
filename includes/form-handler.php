@@ -96,19 +96,84 @@ function fm_display_form($atts) {
                         <?php
                         break;
 
-                    case 'map': // Localisation (Google Maps)
-                        ?>
-                        <input type="text" 
-                               id="fm_<?php echo esc_attr($field['name']); ?>" 
-                               name="fm_<?php echo esc_attr($field['name']); ?>" 
-                               placeholder="Entrez une localisation" required>
-                        <div id="map_<?php echo esc_attr($field['name']); ?>" 
-                             style="width: 100%; height: 300px;"></div>
-                        <script>
-                            // Ajoutez ici un script pour Google Maps
-                        </script>
-                        <?php
-                        break;
+                        
+                        case 'map':
+                            ?>
+                            <input type="text" 
+                                   id="fm_search_<?php echo esc_attr($field['name']); ?>" 
+                                   placeholder="Rechercher une adresse"
+                                   style="width: 100%; margin-bottom: 10px;">
+                            
+                            <input type="text" 
+                                   id="fm_<?php echo esc_attr($field['name']); ?>" 
+                                   name="fm_<?php echo esc_attr($field['name']); ?>" 
+                                   class="map-coordinates"
+                                   placeholder="Latitude, Longitude"
+                                   readonly>
+                            
+                            <iframe 
+                                id="map_<?php echo esc_attr($field['name']); ?>"
+                                width="100%" 
+                                height="300"
+                                style="border:0; margin-top: 10px;"
+                                src="https://maps.google.com/maps?q=48.8566,2.3522&t=&z=13&ie=UTF8&iwloc=&output=embed"
+                                allowfullscreen>
+                            </iframe>
+                        
+                            <script>
+                                (function() {
+                                    const searchInput = document.getElementById('fm_search_<?php echo esc_attr($field['name']); ?>');
+                                    const coordInput = document.getElementById('fm_<?php echo esc_attr($field['name']); ?>');
+                                    const mapFrame = document.getElementById('map_<?php echo esc_attr($field['name']); ?>');
+                        
+                                    // Géolocalisation initiale
+                                    if (navigator.geolocation) {
+                                        navigator.geolocation.getCurrentPosition(function(position) {
+                                            updateMap(position.coords.latitude, position.coords.longitude);
+                                        });
+                                    }
+                        
+                                    // Fonction de mise à jour de la carte
+                                    function updateMap(lat, lng) {
+                                        coordInput.value = lat.toFixed(6) + ', ' + lng.toFixed(6);
+                                        mapFrame.src = 'https://maps.google.com/maps?q=' + lat + ',' + lng + '&t=&z=13&ie=UTF8&iwloc=&output=embed';
+                                    }
+                        
+                                    // Recherche d'adresse
+                                    searchInput.addEventListener('keypress', function(e) {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            const address = encodeURIComponent(this.value);
+                                            
+                                            // Utiliser l'API de géocodage Nominatim (OpenStreetMap)
+                                            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${address}`)
+                                                .then(response => response.json())
+                                                .then(data => {
+                                                    if (data.length > 0) {
+                                                        const result = data[0];
+                                                        updateMap(parseFloat(result.lat), parseFloat(result.lon));
+                                                    } else {
+                                                        alert('Adresse non trouvée');
+                                                    }
+                                                })
+                                                .catch(error => {
+                                                    console.error('Erreur:', error);
+                                                    alert('Erreur lors de la recherche');
+                                                });
+                                        }
+                                    });
+                        
+                                    // Permettre le clic sur la carte (en utilisant postMessage)
+                                    window.addEventListener('message', function(e) {
+                                        if (e.data.type === 'mapClick') {
+                                            updateMap(e.data.lat, e.data.lng);
+                                        }
+                                    });
+                                })();
+                            </script>
+                            <?php
+                            break;
+                    
 
                     default: // Champ texte ou autre
                         ?>
