@@ -1,0 +1,34 @@
+
+.fm-form {
+    padding: 20px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+.fm-form label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.fm-form input[type="text"],
+.fm-form input[type="email"],
+.fm-form textarea,
+.fm-form select {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.fm-form button[type="submit"] {
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.3s ease;
+}
+
+.fm-form button[type="submit"]:hover {
+    opacity: 0.9;
+}

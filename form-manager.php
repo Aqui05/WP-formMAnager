@@ -10,7 +10,18 @@ if (!defined('ABSPATH')) {
     exit; // Empêche l'accès direct au fichier.
 }
 
+
+
+
+// Ajouter ceci après les autres require_once
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+
+
 // Inclure les fichiers nécessaires
+require_once plugin_dir_path(__FILE__) . 'includes/form-styles.php';
 require_once plugin_dir_path(__FILE__) . 'includes/form-custom-post-type.php';
 require_once plugin_dir_path(__FILE__) . 'includes/form-handler.php';
 require_once plugin_dir_path(__FILE__) . 'includes/form-submissions-manager.php';
@@ -24,11 +35,27 @@ function fm_enqueue_scripts() {
         'ajaxurl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('form_submissions_nonce')
     ]);
+
+            wp_enqueue_style('wp-color-picker');
+            wp_enqueue_media();
+            wp_enqueue_script('wp-color-picker');
+            wp_enqueue_script('form-admin-script', plugins_url('/assets/js/admin-script.js', __FILE__), 
+                array('jquery', 'wp-color-picker'), null, true);
+        
+
+            // Styles front-end
+    wp_enqueue_style('form-submissions-style', plugins_url('/assets/css/form-style.css', __FILE__));
+        
 }
 add_action('wp_enqueue_scripts', 'fm_enqueue_scripts');
 
 // Gestion de l'export CSV des soumissions
 add_action('wp_ajax_export_submissions_csv', 'export_submissions_csv_callback');
+
+add_action('admin_enqueue_scripts', 'fm_enqueue_scripts');
+add_action('wp_enqueue_scripts', 'fm_enqueue_scripts');
+
+
 
 function export_submissions_csv_callback() {
     // Vérification du nonce

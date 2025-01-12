@@ -38,6 +38,15 @@ function fm_add_form_fields_metabox() {
         'normal',
         'high'
     );
+
+    add_meta_box(
+        'fm_form_styles',
+        'Personnalisation du style',
+        'fm_display_style_metabox',
+        'fm_form',
+        'normal',
+        'high'
+    );
 }
 add_action('add_meta_boxes', 'fm_add_form_fields_metabox');
 
