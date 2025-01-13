@@ -468,6 +468,9 @@ add_shortcode('fm_form', 'fm_display_form');
 }*/
 
 
+//Modifier le code suivant pour envoyer seulement un mail qui dit "Un formulaire a été soumis par un utilisateur" à l'administrateur; si l'email de l'administrateur n'est pas renseigné, envoyer le mail à kikissagbeaquilas@gmail.com
+
+
 function fm_handle_submission() {
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['fm_submit'])) {
         global $wpdb;
@@ -758,8 +761,6 @@ add_action('admin_menu', 'fm_register_admin_page');*/
 
     echo '</table>';
 }*/
-
-
 
 
 
