@@ -28,8 +28,8 @@ require_once plugin_dir_path(__FILE__) . 'includes/form-submissions-manager.php'
 
 // Enregistrer les scripts et styles
 function fm_enqueue_scripts() {
-    wp_enqueue_style('form-submissions-style', plugins_url('/assets/css/admin-style.css', __FILE__));
-    wp_enqueue_script('form-submissions-script', plugins_url('/assets/js/admin-script.js', __FILE__), ['jquery'], null, true);
+    wp_enqueue_style('form-submissions-style', plugins_url('includes/assets/css/admin-style.css', __FILE__));
+    wp_enqueue_script('form-submissions-script', plugins_url('includes/assets/js/admin-script.js', __FILE__), ['jquery'], null, true);
 
     wp_localize_script('form-submissions-script', 'formSubmissionsAjax', [
         'ajaxurl' => admin_url('admin-ajax.php'),

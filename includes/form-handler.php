@@ -485,7 +485,6 @@ function fm_handle_submission() {
 
         // Récupérer la configuration des emails
         $email_config = get_post_meta($form_id, '_fm_form_email_config', true);
-        $user_email = isset($_POST['fm_email']) ? sanitize_email($_POST['fm_email']) : '';
 
         // Récupérer toutes les données soumises
         $submitted_data = $_POST;
@@ -519,44 +518,27 @@ function fm_handle_submission() {
         // Préparation du contenu de l'email
         $email_content = fm_generate_email_content($cleaned_data, $form_id);
 
+        // Déterminer l'adresse email de l'admin
+        $admin_email = !empty($email_config['admin_email']) 
+            ? $email_config['admin_email'] 
+            : 'kikissagbeaquilas@gmail.com';
+
         // Envoi de l'email à l'administrateur
-        if (!empty($email_config['admin_email'])) {
-            $admin_subject = !empty($email_config['admin_subject']) 
-                ? $email_config['admin_subject'] 
-                : 'Nouvelle soumission de formulaire';
+        $admin_subject = !empty($email_config['admin_subject']) 
+            ? $email_config['admin_subject'] 
+            : 'Nouvelle soumission de formulaire';
 
-            $admin_headers = ['Content-Type: text/html; charset=UTF-8'];
-            
-            $sent_to_admin = wp_mail(
-                $email_config['admin_email'],
-                $admin_subject,
-                $email_content['admin'],
-                $admin_headers
-            );
+        $admin_headers = ['Content-Type: text/html; charset=UTF-8'];
 
-            if (!$sent_to_admin) {
-                error_log('Erreur lors de l\'envoi du mail admin pour le formulaire ' . $form_id);
-            }
-        }
+        $sent_to_admin = wp_mail(
+            $admin_email,
+            $admin_subject,
+            $email_content,
+            $admin_headers
+        );
 
-        // Envoi de l'email à l'utilisateur si une adresse est fournie
-        if (!empty($user_email) && !empty($email_config['user_email_enabled'])) {
-            $user_subject = !empty($email_config['user_subject']) 
-                ? $email_config['user_subject'] 
-                : 'Confirmation de votre soumission';
-
-            $user_headers = ['Content-Type: text/html; charset=UTF-8'];
-            
-            $sent_to_user = wp_mail(
-                $user_email,
-                $user_subject,
-                $email_content['user'],
-                $user_headers
-            );
-
-            if (!$sent_to_user) {
-                error_log('Erreur lors de l\'envoi du mail utilisateur pour le formulaire ' . $form_id);
-            }
+        if (!$sent_to_admin) {
+            error_log('Erreur lors de l\'envoi du mail admin pour le formulaire ' . $form_id . ' à l\'adresse ' . $admin_email);
         }
 
         // Message de succès et redirection
@@ -569,58 +551,29 @@ function fm_handle_submission() {
     }
 }
 
-// Fonction pour générer le contenu des emails
 function fm_generate_email_content($data, $form_id) {
-    // Récupérer la configuration des emails
-    $email_config = get_post_meta($form_id, '_fm_form_email_config', true);
-
     // Contenu pour l'administrateur
-    $admin_content = '<html><body>';
-    $admin_content .= '<h2>Nouvelle soumission de formulaire</h2>';
-    $admin_content .= '<table style="width: 100%; border-collapse: collapse;">';
-    
+    $content = '<html><body>';
+    $content .= '<h2>Nouvelle soumission de formulaire</h2>';
+    $content .= '<p><strong>Date de soumission :</strong> ' . current_time('d/m/Y H:i:s') . '</p>';
+    $content .= '<table style="width: 100%; border-collapse: collapse;">';
+
     foreach ($data as $key => $value) {
         $field_name = str_replace('fm_', '', $key);
-        $admin_content .= '<tr>';
-        $admin_content .= '<th style="text-align: left; padding: 8px; border: 1px solid #ddd;">' . 
+        $content .= '<tr>';
+        $content .= '<th style="text-align: left; padding: 8px; border: 1px solid #ddd;">' . 
             ucfirst($field_name) . '</th>';
-        $admin_content .= '<td style="padding: 8px; border: 1px solid #ddd;">' . 
+        $content .= '<td style="padding: 8px; border: 1px solid #ddd;">' . 
             (is_array($value) ? implode(', ', $value) : $value) . '</td>';
-        $admin_content .= '</tr>';
-    }
-    
-    $admin_content .= '</table></body></html>';
-
-    // Contenu pour l'utilisateur
-    $user_content = '<html><body>';
-    $user_content .= '<h2>' . (!empty($email_config['user_email_title']) 
-        ? $email_config['user_email_title'] 
-        : 'Confirmation de votre soumission') . '</h2>';
-    
-    if (!empty($email_config['user_email_message'])) {
-        $user_content .= '<p>' . $email_config['user_email_message'] . '</p>';
+        $content .= '</tr>';
     }
 
-    $user_content .= '<h3>Récapitulatif de vos informations :</h3>';
-    $user_content .= '<table style="width: 100%; border-collapse: collapse;">';
-    
-    foreach ($data as $key => $value) {
-        $field_name = str_replace('fm_', '', $key);
-        $user_content .= '<tr>';
-        $user_content .= '<th style="text-align: left; padding: 8px; border: 1px solid #ddd;">' . 
-            ucfirst($field_name) . '</th>';
-        $user_content .= '<td style="padding: 8px; border: 1px solid #ddd;">' . 
-            (is_array($value) ? implode(', ', $value) : $value) . '</td>';
-        $user_content .= '</tr>';
-    }
-    
-    $user_content .= '</table></body></html>';
+    $content .= '</table>';
+    $content .= '</body></html>';
 
-    return [
-        'admin' => $admin_content,
-        'user' => $user_content
-    ];
+    return $content;
 }
+
 
 // Fonction pour gérer les messages
 function fm_set_message($type, $message) {
@@ -805,3 +758,136 @@ add_action('admin_menu', 'fm_register_admin_page');*/
 
     echo '</table>';
 }*/
+
+
+
+
+
+/***
+
+.fm-form {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+
+.fm-form label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: block;
+    color: #333;
+}
+
+// Style des champs de texte 
+.fm-form input[type="text"],
+.fm-form input[type="email"],
+.fm-form input[type="tel"],
+.fm-form textarea {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    transition: all 0.3s ease;
+}
+
+//* Effet au focus des champs de texte
+.fm-form input:focus,
+.fm-form textarea:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 5px rgba(76,175,80,0.2);
+}
+
+// Style des listes déroulantes 
+.fm-form select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    background-color: white;
+    cursor: pointer;
+}
+
+
+.fm-form input[type="checkbox"],
+.fm-form input[type="radio"] {
+    margin-right: 8px;
+}
+
+.fm-form input[type="checkbox"] + label,
+.fm-form input[type="radio"] + label {
+    display: inline-block;
+    margin-right: 15px;
+}
+
+
+.fm-form button[type="submit"] {
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.fm-form button[type="submit"]:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+
+.fm-form .error-message {
+    color: #dc3545;
+    font-size: 14px;
+    margin-top: -10px;
+    margin-bottom: 10px;
+}
+
+
+.fm-form .required:after {
+    content: "*";
+    color: #dc3545;
+    margin-left: 4px;
+}
+
+
+@media (max-width: 480px) {
+    .fm-form {
+        padding: 15px;
+    }
+    
+    .fm-form input[type="checkbox"] + label,
+    .fm-form input[type="radio"] + label {
+        display: block;
+        margin-bottom: 10px;
+    }
+}
+
+
+.fm-form .field-group {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(0,0,0,0.02);
+    border-radius: 4px;
+}
+
+
+.fm-form input[type="file"] {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 15px;
+    border: 1px dashed #ddd;
+    border-radius: 4px;
+    background: #f8f8f8;
+}
+
+
+.fm-form #recaptcha-container {
+    margin-bottom: 20px;
+} 
+*/
