@@ -150,6 +150,43 @@ function fm_add_form_fields_metabox() {
 }
 add_action('add_meta_boxes', 'fm_add_form_fields_metabox');
 
+function fm_custom_form_row_actions($actions, $post) {
+    if ($post->post_type === 'fm_form') {
+        $view_url = add_query_arg([
+            'post_type' => 'fm_form',
+            'fm_form_preview' => $post->ID,
+        ], home_url());
+
+        $actions['view_form'] = '<a href="' . esc_url($view_url) . '" target="_blank">Voir</a>';
+    }
+
+    return $actions;
+}
+add_filter('post_row_actions', 'fm_custom_form_row_actions', 10, 2);
+
+
+function fm_display_form_preview() {
+    if (isset($_GET['fm_form_preview']) && is_numeric($_GET['fm_form_preview'])) {
+        $form_id = intval($_GET['fm_form_preview']);
+
+        // Vérifiez si le formulaire existe
+        $form_post = get_post($form_id);
+        if ($form_post && $form_post->post_type === 'fm_form') {
+            //get_header(); // Inclure l'en-tête de votre thème
+
+            echo '<div class="fm-form-preview">';
+            echo '<h1>' . esc_html($form_post->post_title) . '</h1>';
+            echo do_shortcode('[fm_form id="' . $form_id . '"]');
+            echo '</div>';
+
+            //get_footer(); // Inclure le pied de page de votre thème
+            exit; // Arrêtez le chargement de tout autre contenu
+        }
+    }
+}
+add_action('template_redirect', 'fm_display_form_preview');
+
+
 // Rendu de la métabox
 function fm_render_form_fields_metabox($post) {
     // Récupérer les valeurs enregistrées
