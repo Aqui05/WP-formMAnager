@@ -205,7 +205,7 @@ function fm_render_form_fields_metabox($post) {
                     <option value="text" <?php selected($field['type'], 'text'); ?>>Texte (simple ligne)</option>
                     <option value="textarea" <?php selected($field['type'], 'textarea'); ?>>Texte (multi-lignes)</option>
                     <option value="email" <?php selected($field['type'], 'email'); ?>>Email</option>
-                    <option value="tel" <?php selected($field['type'], 'tel'); ?>>Téléphone</option>
+                    <option value="number" <?php selected($field['type'], 'number'); ?>>Numéro</option>
                     <option value="map" <?php selected($field['type'], 'map'); ?>>Localisation (Google Maps)</option>
                     <option value="select" <?php selected($field['type'], 'select'); ?>>Liste déroulante</option>
                     <option value="radio" <?php selected($field['type'], 'radio'); ?>>Boutons radio</option>

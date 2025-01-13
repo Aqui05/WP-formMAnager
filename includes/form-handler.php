@@ -299,6 +299,16 @@ function fm_display_form($atts) {
                                     </label>
                                 <?php endforeach;
                                 break;
+
+                            case 'number': // Champ numérique
+                                ?>
+                                <input type="number" 
+                                       id="fm_<?php echo esc_attr($field['name']);?>" 
+                                       name="fm_<?php echo esc_attr($field['name']);?>" 
+                                       class="fm-number"
+                                       required>
+                                <?php
+                                break;    
         
                             case 'file': // Téléchargement de fichiers
                                 ?>
@@ -785,7 +795,7 @@ add_action('admin_menu', 'fm_register_admin_page');*/
 // Style des champs de texte 
 .fm-form input[type="text"],
 .fm-form input[type="email"],
-.fm-form input[type="tel"],
+.fm-form input[type="number"],
 .fm-form textarea {
     width: 100%;
     padding: 12px;
