@@ -28,6 +28,106 @@ function fm_create_custom_post_type() {
 add_action('init', 'fm_create_custom_post_type');
 
 
+// Ajouter une action "Dupliquer" dans la liste des formulaires
+function fm_add_duplicate_action($actions, $post) {
+    // Vérifier si le post est du type 'fm_form'
+    if ($post->post_type === 'fm_form') {
+        $duplicate_link = admin_url('admin.php?action=fm_duplicate_form&post=' . $post->ID);
+        $actions['duplicate'] = '<a href="' . esc_url($duplicate_link) . '" title="Dupliquer ce formulaire">Dupliquer</a>';
+    }
+    return $actions;
+}
+add_filter('post_row_actions', 'fm_add_duplicate_action', 10, 2);
+
+// Traiter l'action "Dupliquer"
+function fm_duplicate_form() {
+    // Vérifier les permissions
+    if (!current_user_can('edit_posts')) {
+        wp_die('Vous n’avez pas la permission de dupliquer ce formulaire.');
+    }
+
+    // Vérifier les paramètres
+    if (!isset($_GET['post']) || !is_numeric($_GET['post'])) {
+        wp_die('Aucun formulaire spécifié.');
+    }
+
+    $post_id = intval($_GET['post']);
+    $original_post = get_post($post_id);
+
+    // Vérifier si le formulaire existe
+    if (!$original_post || $original_post->post_type !== 'fm_form') {
+        wp_die('Formulaire non valide.');
+    }
+
+    // Dupliquer le formulaire
+    $new_post = [
+        'post_title'   => $original_post->post_title . ' (Copie)',
+        'post_content' => $original_post->post_content,
+        'post_status'  => 'draft',
+        'post_type'    => 'fm_form',
+    ];
+
+    // Insérer le nouveau formulaire
+    $new_post_id = wp_insert_post($new_post);
+
+    // Copier les métadonnées associées
+    $meta_data = get_post_meta($post_id);
+    foreach ($meta_data as $meta_key => $meta_value) {
+        if (is_array($meta_value)) {
+            foreach ($meta_value as $value) {
+                add_post_meta($new_post_id, $meta_key, maybe_unserialize($value));
+            }
+        } else {
+            add_post_meta($new_post_id, $meta_key, maybe_unserialize($meta_value));
+        }
+    }
+
+    // Rediriger vers la liste des formulaires
+    wp_redirect(admin_url('edit.php?post_type=fm_form'));
+    exit;
+}
+add_action('admin_action_fm_duplicate_form', 'fm_duplicate_form');
+
+
+// Ajouter les colonnes personnalisées
+function fm_add_custom_columns($columns) {
+    $columns['shortcode'] = 'Shortcode';
+    $columns['submissions'] = 'Nombre de soumissions';
+    return $columns;
+}
+add_filter('manage_edit-fm_form_columns', 'fm_add_custom_columns');
+
+// Afficher les données des colonnes personnalisées
+function fm_render_custom_columns($column, $post_id) {
+    global $wpdb;
+
+    switch ($column) {
+        case 'shortcode':
+            echo '[fm_form id="' . $post_id . '"]';
+            break;
+
+        case 'submissions':
+            $table_name = $wpdb->prefix . 'form_submissions';
+            $count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE form_id = %d", $post_id));
+            echo $count ? $count : '0';
+            break;
+    }
+}
+add_action('manage_fm_form_posts_custom_column', 'fm_render_custom_columns', 10, 2);
+
+// Ajouter des styles pour les colonnes (facultatif)
+function fm_custom_column_styles() {
+    echo '<style>
+        .column-shortcode, .column-submissions {
+            text-align: center;
+            width: 150px;
+        }
+    </style>';
+}
+add_action('admin_head', 'fm_custom_column_styles');
+
+
+
 // Ajouter une métabox pour les champs du formulaire
 function fm_add_form_fields_metabox() {
     add_meta_box(
@@ -177,3 +277,4 @@ function fm_save_form_fields($post_id) {
     }
 }
 add_action('save_post', 'fm_save_form_fields');
+

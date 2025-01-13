@@ -117,7 +117,7 @@ function fm_create_submissions_table() {
     $table_name = $wpdb->prefix . 'form_submissions';
     $charset_collate = $wpdb->get_charset_collate();
 
-    $sql = "CREATE TABLE IF NOT EXISTS table_name (
+    $sql = "CREATE TABLE IF NOT EXISTS $table_name (
         id mediumint(9) NOT NULL AUTO_INCREMENT,
         form_id mediumint(9) NOT NULL,
         submitted_data longtext NOT NULL,
@@ -125,8 +125,6 @@ function fm_create_submissions_table() {
         status varchar(20) DEFAULT 'new',
         PRIMARY KEY (id)
     ) $charset_collate;";
-
-
 
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta($sql);
