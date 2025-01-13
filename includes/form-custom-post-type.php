@@ -172,7 +172,7 @@ function fm_display_form_preview() {
         // Vérifiez si le formulaire existe
         $form_post = get_post($form_id);
         if ($form_post && $form_post->post_type === 'fm_form') {
-            //get_header(); // Inclure l'en-tête de votre thème
+            get_header(); // Inclure l'en-tête de votre thème
 
             echo '<div class="fm-form-preview">';
             echo '<h1>' . esc_html($form_post->post_title) . '</h1>';
