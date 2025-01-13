@@ -150,43 +150,6 @@ function fm_add_form_fields_metabox() {
 }
 add_action('add_meta_boxes', 'fm_add_form_fields_metabox');
 
-function fm_custom_form_row_actions($actions, $post) {
-    if ($post->post_type === 'fm_form') {
-        $view_url = add_query_arg([
-            'post_type' => 'fm_form',
-            'fm_form_preview' => $post->ID,
-        ], home_url());
-
-        $actions['view_form'] = '<a href="' . esc_url($view_url) . '" target="_blank">Voir</a>';
-    }
-
-    return $actions;
-}
-add_filter('post_row_actions', 'fm_custom_form_row_actions', 10, 2);
-
-
-function fm_display_form_preview() {
-    if (isset($_GET['fm_form_preview']) && is_numeric($_GET['fm_form_preview'])) {
-        $form_id = intval($_GET['fm_form_preview']);
-
-        // Vérifiez si le formulaire existe
-        $form_post = get_post($form_id);
-        if ($form_post && $form_post->post_type === 'fm_form') {
-            get_header(); // Inclure l'en-tête de votre thème
-
-            echo '<div class="fm-form-preview">';
-            echo '<h1>' . esc_html($form_post->post_title) . '</h1>';
-            echo do_shortcode('[fm_form id="' . $form_id . '"]');
-            echo '</div>';
-
-            //get_footer(); // Inclure le pied de page de votre thème
-            exit; // Arrêtez le chargement de tout autre contenu
-        }
-    }
-}
-add_action('template_redirect', 'fm_display_form_preview');
-
-
 // Rendu de la métabox
 function fm_render_form_fields_metabox($post) {
     // Récupérer les valeurs enregistrées
@@ -315,3 +278,88 @@ function fm_save_form_fields($post_id) {
 }
 add_action('save_post', 'fm_save_form_fields');
 
+
+
+// Filtrer le contenu pour les formulaires
+function fm_filter_form_content($content) {
+    // Vérifier si nous sommes sur un post de type fm_form
+    if (is_singular('fm_form') && in_the_loop() && is_main_query()) {
+        global $post;
+        
+        // Récupérer le shortcode du formulaire
+        $shortcode = '[fm_form id="' . $post->ID . '"]';
+        
+        // Ajouter une description si nécessaire
+        $description = '';
+        if (!empty($post->post_content)) {
+            $description = '<div class="form-description">' . $post->post_content . '</div>';
+        }
+        
+        // Construire le contenu complet
+        $form_content = sprintf(
+            '<div class="form-container">
+                %s
+                %s
+            </div>',
+            $description,
+            do_shortcode($shortcode)
+        );
+        
+        // Ajouter des styles personnalisés
+        $form_content .= '
+        <style>
+            .form-container {
+                max-width: 800px;
+                margin: 2em auto;
+                padding: 20px;
+            }
+            .form-description {
+                margin-bottom: 2em;
+                padding: 15px;
+                background: #f9f9f9;
+                border-left: 4px solid #0073aa;
+            }
+        </style>';
+        
+        return $form_content;
+    }
+    
+    return $content;
+}
+add_filter('the_content', 'fm_filter_form_content');
+
+// Modifier le template pour les formulaires
+function fm_form_template($template) {
+    if (is_singular('fm_form')) {
+        // Utiliser le template de page par défaut si disponible
+        $new_template = locate_template(array('page.php', 'single.php', 'index.php'));
+        if (!empty($new_template)) {
+            return $new_template;
+        }
+    }
+    return $template;
+}
+add_filter('single_template', 'fm_form_template');
+
+// Ajouter le support des styles aux formulaires
+function fm_add_form_theme_support() {
+    add_theme_support('post-thumbnails', array('fm_form'));
+    add_theme_support('custom-background', array('fm_form'));
+}
+add_action('after_setup_theme', 'fm_add_form_theme_support');
+
+// Modifier le titre pour la vue unique et la prévisualisation
+function fm_modify_form_title($title, $post_id = null) {
+    if (is_singular('fm_form') && in_the_loop() && is_main_query()) {
+        $post = get_post($post_id);
+        if ($post && $post->post_type === 'fm_form') {
+            return sprintf(
+                '%s %s',
+                __('Formulaire :', 'text-domain'),
+                $title
+            );
+        }
+    }
+    return $title;
+}
+add_filter('the_title', 'fm_modify_form_title', 10, 2);
