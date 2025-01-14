@@ -573,7 +573,6 @@ function fm_handle_submission() {
         // ID du formulaire
         $form_id = isset($_POST['fm_form_id']) ? intval($_POST['fm_form_id']) : 0;
 
-        // Vérification du formulaire
         if (empty($form_id)) {
             fm_set_message('error', 'Formulaire invalide.');
             wp_redirect(add_query_arg('fm_error', 'invalid_form', wp_get_referer()));
@@ -581,7 +580,7 @@ function fm_handle_submission() {
         }
 
         // Vérification du reCAPTCHA
-        $recaptcha_secret = 'YOUR_RECAPTCHA_SECRET_KEY';
+        $recaptcha_secret = '6LdifKYqAAAAAG7s49WzjqhQ9kinCF-bGFfpPb_N';
         $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
         $recaptcha_verify_url = 'https://www.google.com/recaptcha/api/siteverify';
 
@@ -602,7 +601,7 @@ function fm_handle_submission() {
             //exit;
         }
 
-        // Récupérer les données soumises (sans le reCAPTCHA)
+        // Récupération des données soumises
         $submitted_data = $_POST;
         unset($submitted_data['fm_form_id'], $submitted_data['fm_submit'], $submitted_data['g-recaptcha-response']);
 
@@ -623,50 +622,55 @@ function fm_handle_submission() {
                     $file_name = sanitize_file_name($file['name']);
                     $file_tmp_path = $file['tmp_name'];
 
-                    // Vérifier le type MIME et la taille du fichier
-                    $allowed_types = ['image/jpeg', 'image/png', 'application/pdf']; // Types autorisés
-                    $max_file_size = 2 * 1024 * 1024; // Taille maximale : 2 Mo
+                    $allowed_types = ['image/jpeg', 'image/png', 'application/pdf'];
+                    $max_file_size = 2 * 1024 * 1024;
 
                     $file_type = mime_content_type($file_tmp_path);
                     $file_size = filesize($file_tmp_path);
 
-                    if (!in_array($file_type, $allowed_types)) {
-                        fm_set_message('error', 'Type de fichier non autorisé.');
-                        wp_redirect(add_query_arg('fm_error', 'invalid_file_type', wp_get_referer()));
-                        exit;
+                    if (!in_array($file_type, $allowed_types) || $file_size > $max_file_size) {
+                        continue; // Ignorer les fichiers non conformes
                     }
 
-                    if ($file_size > $max_file_size) {
-                        fm_set_message('error', 'Fichier trop volumineux.');
-                        wp_redirect(add_query_arg('fm_error', 'file_too_large', wp_get_referer()));
-                        exit;
-                    }
-
-                    // Déplacer le fichier vers le répertoire des téléchargements
                     $destination_path = $upload_dir['path'] . '/' . $file_name;
+
                     if (move_uploaded_file($file_tmp_path, $destination_path)) {
                         $file_urls[$file_key] = $upload_dir['url'] . '/' . $file_name;
-                    } else {
-                        fm_set_message('error', 'Erreur lors de l\'enregistrement du fichier.');
-                        wp_redirect(add_query_arg('fm_error', 'file_upload_error', wp_get_referer()));
-                        exit;
                     }
                 }
             }
         }
 
-        // Ajouter les URLs des fichiers aux données soumises
         $cleaned_data['uploaded_files'] = $file_urls;
+
+        // Chiffrement des données
+        $iv_length = openssl_cipher_iv_length('AES-256-CBC');
+        $iv = openssl_random_pseudo_bytes($iv_length);
+
+        $encrypted_data = openssl_encrypt(
+            wp_json_encode($cleaned_data),
+            'AES-256-CBC',
+            FM_ENCRYPTION_KEY,
+            0,
+            $iv
+        );
+
+        if ($encrypted_data === false) {
+            fm_set_message('error', 'Erreur lors du chiffrement des données.');
+            wp_redirect(add_query_arg('fm_error', 'encryption_error', wp_get_referer()));
+            exit;
+        }
+
+        $iv_encoded = base64_encode($iv);
 
         // Préparer les données pour la base de données
         $data = [
             'form_id' => $form_id,
-            'submitted_data' => wp_json_encode($cleaned_data),
+            'submitted_data' => wp_json_encode(['data' => $encrypted_data, 'iv' => $iv_encoded]),
             'status' => 'new',
             'submitted_at' => current_time('mysql'),
         ];
 
-        // Insertion dans la base de données
         $result = $wpdb->insert($table_name, $data);
 
         if ($result === false) {
@@ -675,8 +679,19 @@ function fm_handle_submission() {
             exit;
         }
 
-        // Message de succès et redirection
-        fm_set_message('success', 'Votre message a été envoyé avec succès.');
+        // Envoi d'email
+        $email_config = get_post_meta($form_id, '_fm_form_email_config', true);
+        $admin_email = $email_config['admin_email'] ?? get_option('admin_email');
+        $admin_subject = $email_config['admin_subject'] ?? 'Nouvelle soumission de formulaire';
+        $email_content = fm_generate_email_content($cleaned_data, $form_id);
+
+        $sent_to_admin = wp_mail($admin_email, $admin_subject, $email_content, ['Content-Type: text/html; charset=UTF-8']);
+
+        if (!$sent_to_admin) {
+            error_log('Erreur lors de l\'envoi du mail admin pour le formulaire ' . $form_id . ' à l\'adresse ' . $admin_email);
+        }
+
+        fm_set_message('success', $email_config['success_message'] ?? 'Votre message a été envoyé avec succès.');
         wp_redirect(add_query_arg('fm_submitted', 'true', wp_get_referer()));
         exit;
     }

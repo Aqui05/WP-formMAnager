@@ -66,7 +66,32 @@ class FormSubmissionsManager {
         ]);
     }
 
-    public function renderSubmissionsPage() {
+    private function getAvailableForms() {
+        global $wpdb;
+        $forms = $wpdb->get_results("
+            SELECT DISTINCT f.ID, f.post_title 
+            FROM {$wpdb->posts} f 
+            INNER JOIN {$this->table_name} s ON f.ID = s.form_id 
+            WHERE f.post_type = 'fm_form' 
+            AND f.post_status = 'publish'
+            ORDER BY f.post_title ASC
+        ");
+        
+        // Si aucun formulaire n'a de soumissions, récupérer tous les formulaires publiés
+        if (empty($forms)) {
+            $forms = get_posts([
+                'post_type' => 'fm_form',
+                'post_status' => 'publish',
+                'posts_per_page' => -1,
+                'orderby' => 'title',
+                'order' => 'ASC'
+            ]);
+        }
+        
+        return $forms;
+    }
+
+    /*public function renderSubmissionsPage() {
         global $wpdb;
 
         // Gérer les actions en masse
@@ -182,7 +207,208 @@ class FormSubmissionsManager {
             </form>
         </div>
         <?php
+    }*/
+
+
+    public function renderSubmissionsPage() {
+        global $wpdb;
+
+        // Récupérer tous les formulaires disponibles
+        $forms = $this->getAvailableForms();
+        
+        // Sélectionner le formulaire actif
+        $current_form_id = isset($_GET['form_id']) ? intval($_GET['form_id']) : ($forms ? $forms[0]->ID : 0);
+
+        // Gérer les actions en masse
+        if (isset($_POST['action'])) {
+            if (!empty($_POST['submissions']) && is_array($_POST['submissions'])) {
+                $ids = array_map('intval', $_POST['submissions']);
+                
+                if ($_POST['action'] === 'bulk_export_csv') {
+                    $submissions = $wpdb->get_results("SELECT * FROM {$this->table_name} WHERE id IN (" . implode(',', $ids) . ")");
+                    $this->exportSubmissionsToCSV($submissions);
+                } elseif ($_POST['action'] === 'bulk_delete') {
+                    $wpdb->query("DELETE FROM {$this->table_name} WHERE id IN (" . implode(',', $ids) . ")");
+                    echo '<div class="notice notice-success"><p>Soumissions supprimées avec succès.</p></div>';
+                }
+            }
+        }
+
+        // Pagination
+        $per_page = 20;
+        $current_page = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
+        $offset = ($current_page - 1) * $per_page;
+
+        // Récupérer les soumissions pour le formulaire sélectionné
+        $submissions = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table_name} WHERE form_id = %d ORDER BY submitted_at DESC LIMIT %d OFFSET %d",
+                $current_form_id,
+                $per_page,
+                $offset
+            )
+        );
+
+        $total_items = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(id) FROM {$this->table_name} WHERE form_id = %d",
+            $current_form_id
+        ));
+        
+        $total_pages = ceil($total_items / $per_page);
+
+        ?>
+        <div class="wrap">
+            <h1>Soumissions de formulaires</h1>
+
+            <!-- Sélecteur de formulaire -->
+            <div class="form-selector" style="margin: 20px 0;">
+                <form method="get">
+                    <input type="hidden" name="page" value="form-submissions">
+                    <select name="form_id" onchange="this.form.submit()">
+                        <?php foreach ($forms as $form): ?>
+                            <option value="<?php echo $form->ID; ?>" <?php selected($form->ID, $current_form_id); ?>>
+                                <?php echo esc_html($form->post_title); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </form>
+            </div>
+            
+            <form method="post">
+                <div class="tablenav top">
+                    <div class="alignleft actions bulkactions">
+                        <select name="action">
+                            <option value="-1">Actions groupées</option>
+                            <option value="bulk_delete">Supprimer</option>
+                            <option value="bulk_export_csv">Exporter en CSV</option>
+                        </select>
+                        <input type="submit" class="button action" value="Appliquer">
+                    </div>
+                    <div class="tablenav-pages">
+                        <?php
+                        $pagination_args = [
+                            'base' => add_query_arg(['paged' => '%#%', 'form_id' => $current_form_id]),
+                            'format' => '',
+                            'prev_text' => '&laquo;',
+                            'next_text' => '&raquo;',
+                            'total' => $total_pages,
+                            'current' => $current_page
+                        ];
+                        echo paginate_links($pagination_args);
+                        ?>
+                    </div>
+                </div>
+
+                <table class="wp-list-table widefat fixed striped">
+    <thead>
+        <tr>
+            <td class="manage-column column-cb check-column">
+                <input type="checkbox" id="cb-select-all-1">
+            </td>
+            <th>ID</th>
+            <th>Données</th>
+            <th>Date de soumission</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php if ($submissions): ?>
+            <?php foreach ($submissions as $submission): ?>
+                <?php 
+                // Décoder les données JSON stockées
+                $stored_data = json_decode($submission->submitted_data, true);
+                
+                // Vérifier si les données sont dans le bon format
+                if (isset($stored_data['data']) && isset($stored_data['iv'])) {
+                    // Décoder l'IV
+                    $iv = base64_decode($stored_data['iv']);
+                    
+                    // Déchiffrer les données
+                    $decrypted_data = openssl_decrypt(
+                        $stored_data['data'],
+                        'AES-256-CBC',
+                        FM_ENCRYPTION_KEY,
+                        0,
+                        $iv
+                    );
+                    
+                    // Décoder les données JSON déchiffrées
+                    $submitted_data = json_decode($decrypted_data, true);
+                } else {
+                    $submitted_data = null;
+                }
+                ?>
+                <tr>
+                    <th scope="row" class="check-column">
+                        <input type="checkbox" name="submissions[]" value="<?php echo $submission->id; ?>">
+                    </th>
+                    <td><?php echo $submission->id; ?></td>
+                    <td>
+                        <?php
+                        if (is_array($submitted_data)) {
+                            echo '<ul class="submission-data">';
+                            foreach ($submitted_data as $key => $value) {
+                                if ($key === 'uploaded_files' && is_array($value) && !empty($value)) {
+                                    echo '<li><strong>Fichiers uploadés:</strong>';
+                                    echo '<ul class="uploaded-files">';
+                                    foreach ($value as $file_url) {
+                                        echo '<li><a href="' . esc_url($file_url) . '" target="_blank">Voir le fichier</a></li>';
+                                    }
+                                    echo '</ul></li>';
+                                } elseif ($key !== 'uploaded_files') {
+                                    echo '<li><strong>' . esc_html($key) . ':</strong> ' . esc_html($value) . '</li>';
+                                }
+                            }
+                            echo '</ul>';
+                        } else {
+                            echo '<p class="error-message">Erreur lors du déchiffrement des données.</p>';
+                        }
+                        ?>
+                    </td>
+                    <td><?php echo date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($submission->submitted_at)); ?></td>
+                    <td>
+                        <a href="#" class="delete-submission" data-id="<?php echo $submission->id; ?>">Supprimer</a> |
+                        <a href="#" class="export-submission" data-id="<?php echo $submission->id; ?>">Exporter</a>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <tr>
+                <td colspan="5">Aucune soumission trouvée pour ce formulaire.</td>
+            </tr>
+        <?php endif; ?>
+    </tbody>
+</table>
+
+<style>
+    .submission-data {
+        margin: 0;
+        padding: 0;
+        list-style: none;
     }
+    .submission-data li {
+        margin: 5px 0;
+        padding: 5px;
+    }
+    .uploaded-files {
+        margin-left: 20px;
+        padding: 5px 0;
+    }
+    .error-message {
+        color: #dc3232;
+        margin: 0;
+        padding: 5px;
+    }
+</style>
+            </form>
+        </div>
+        <?php
+    }
+
+    
+
+    
+    
 
     public function deleteSubmission() {
         check_ajax_referer('form_submissions_nonce', 'nonce');
