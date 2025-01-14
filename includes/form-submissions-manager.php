@@ -300,85 +300,85 @@ class FormSubmissionsManager {
                 </div>
 
                 <table class="wp-list-table widefat fixed striped">
-    <thead>
-        <tr>
-            <td class="manage-column column-cb check-column">
-                <input type="checkbox" id="cb-select-all-1">
-            </td>
-            <th>ID</th>
-            <th>Données</th>
-            <th>Date de soumission</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php if ($submissions): ?>
-            <?php foreach ($submissions as $submission): ?>
-                <?php 
-                // Décoder les données JSON stockées
-                $stored_data = json_decode($submission->submitted_data, true);
-                
-                // Vérifier si les données sont dans le bon format
-                if (isset($stored_data['data']) && isset($stored_data['iv'])) {
-                    // Décoder l'IV
-                    $iv = base64_decode($stored_data['iv']);
-                    
-                    // Déchiffrer les données
-                    $decrypted_data = openssl_decrypt(
-                        $stored_data['data'],
-                        'AES-256-CBC',
-                        FM_ENCRYPTION_KEY,
-                        0,
-                        $iv
-                    );
-                    
-                    // Décoder les données JSON déchiffrées
-                    $submitted_data = json_decode($decrypted_data, true);
-                } else {
-                    $submitted_data = null;
-                }
-                ?>
-                <tr>
-                    <th scope="row" class="check-column">
-                        <input type="checkbox" name="submissions[]" value="<?php echo $submission->id; ?>">
-                    </th>
-                    <td><?php echo $submission->id; ?></td>
-                    <td>
-                        <?php
-                        if (is_array($submitted_data)) {
-                            echo '<ul class="submission-data">';
-                            foreach ($submitted_data as $key => $value) {
-                                if ($key === 'uploaded_files' && is_array($value) && !empty($value)) {
-                                    echo '<li><strong>Fichiers uploadés:</strong>';
-                                    echo '<ul class="uploaded-files">';
-                                    foreach ($value as $file_url) {
-                                        echo '<li><a href="' . esc_url($file_url) . '" target="_blank">Voir le fichier</a></li>';
-                                    }
-                                    echo '</ul></li>';
-                                } elseif ($key !== 'uploaded_files') {
-                                    echo '<li><strong>' . esc_html($key) . ':</strong> ' . esc_html($value) . '</li>';
+                    <thead>
+                        <tr>
+                            <td class="manage-column column-cb check-column">
+                                <input type="checkbox" id="cb-select-all-1">
+                            </td>
+                            <th>ID</th>
+                            <th>Données</th>
+                            <th>Date de soumission</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if ($submissions): ?>
+                            <?php foreach ($submissions as $submission): ?>
+                                <?php 
+                                // Décoder les données JSON stockées
+                                $stored_data = json_decode($submission->submitted_data, true);
+                                
+                                // Vérifier si les données sont dans le bon format
+                                if (isset($stored_data['data']) && isset($stored_data['iv'])) {
+                                    // Décoder l'IV
+                                    $iv = base64_decode($stored_data['iv']);
+                                    
+                                    // Déchiffrer les données
+                                    $decrypted_data = openssl_decrypt(
+                                        $stored_data['data'],
+                                        'AES-256-CBC',
+                                        FM_ENCRYPTION_KEY,
+                                        0,
+                                        $iv
+                                    );
+                                    
+                                    // Décoder les données JSON déchiffrées
+                                    $submitted_data = json_decode($decrypted_data, true);
+                                } else {
+                                    $submitted_data = null;
                                 }
-                            }
-                            echo '</ul>';
-                        } else {
-                            echo '<p class="error-message">Erreur lors du déchiffrement des données.</p>';
-                        }
-                        ?>
-                    </td>
-                    <td><?php echo date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($submission->submitted_at)); ?></td>
-                    <td>
-                        <a href="#" class="delete-submission" data-id="<?php echo $submission->id; ?>">Supprimer</a> |
-                        <a href="#" class="export-submission" data-id="<?php echo $submission->id; ?>">Exporter</a>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <tr>
-                <td colspan="5">Aucune soumission trouvée pour ce formulaire.</td>
-            </tr>
-        <?php endif; ?>
-    </tbody>
-</table>
+                                ?>
+                                <tr>
+                                    <th scope="row" class="check-column">
+                                        <input type="checkbox" name="submissions[]" value="<?php echo $submission->id; ?>">
+                                    </th>
+                                    <td><?php echo $submission->id; ?></td>
+                                    <td>
+                                        <?php
+                                        if (is_array($submitted_data)) {
+                                            echo '<ul class="submission-data">';
+                                            foreach ($submitted_data as $key => $value) {
+                                                if ($key === 'uploaded_files' && is_array($value) && !empty($value)) {
+                                                    echo '<li><strong>Fichiers uploadés:</strong>';
+                                                    echo '<ul class="uploaded-files">';
+                                                    foreach ($value as $file_url) {
+                                                        echo '<li><a href="' . esc_url($file_url) . '" target="_blank">Voir le fichier</a></li>';
+                                                    }
+                                                    echo '</ul></li>';
+                                                } elseif ($key !== 'uploaded_files') {
+                                                    echo '<li><strong>' . esc_html($key) . ':</strong> ' . esc_html($value) . '</li>';
+                                                }
+                                            }
+                                            echo '</ul>';
+                                        } else {
+                                            echo '<p class="error-message">Erreur lors du déchiffrement des données.</p>';
+                                        }
+                                        ?>
+                                    </td>
+                                    <td><?php echo date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($submission->submitted_at)); ?></td>
+                                    <td>
+                                        <a href="#" class="delete-submission" data-id="<?php echo $submission->id; ?>">Supprimer</a> |
+                                        <a href="#" class="export-submission" data-id="<?php echo $submission->id; ?>">Exporter</a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="5">Aucune soumission trouvée pour ce formulaire.</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
 
 <style>
     .submission-data {
@@ -478,14 +478,40 @@ class FormSubmissionsManager {
         foreach ($submissions as $submission) {
             $form = get_post($submission->form_id);
             $form_title = $form ? $form->post_title : 'Formulaire supprimé';
-            $submitted_data = json_decode($submission->submitted_data, true);
-    
-            // Convertir les données soumises en une chaîne lisible
+            
+            // Décoder les données JSON stockées
+            $stored_data = json_decode($submission->submitted_data, true);
             $data_string = '';
-            if (is_array($submitted_data)) {
-                foreach ($submitted_data as $key => $value) {
-                    $data_string .= "{$key}: {$value}; ";
+            
+            // Vérifier si les données sont dans le bon format
+            if (isset($stored_data['data']) && isset($stored_data['iv'])) {
+                // Décoder l'IV
+                $iv = base64_decode($stored_data['iv']);
+                
+                // Déchiffrer les données
+                $decrypted_data = openssl_decrypt(
+                    $stored_data['data'],
+                    'AES-256-CBC',
+                    FM_ENCRYPTION_KEY,
+                    0,
+                    $iv
+                );
+                
+                // Décoder les données JSON déchiffrées
+                $submitted_data = json_decode($decrypted_data, true);
+                
+                // Convertir les données déchiffrées en une chaîne lisible
+                if (is_array($submitted_data)) {
+                    foreach ($submitted_data as $key => $value) {
+                        if ($key === 'uploaded_files' && is_array($value) && !empty($value)) {
+                            $data_string .= "Fichiers uploadés: " . implode(', ', $value) . "; ";
+                        } elseif ($key !== 'uploaded_files') {
+                            $data_string .= "{$key}: {$value}; ";
+                        }
+                    }
                 }
+            } else {
+                $data_string = 'Erreur lors du déchiffrement des données';
             }
     
             // Ajouter une ligne pour chaque soumission

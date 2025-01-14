@@ -90,16 +90,50 @@ function export_submissions_csv_callback() {
 
     foreach ($submissions as $submission) {
         $form = get_post($submission->form_id);
-        $submitted_data = json_decode($submission->submitted_data, true);
-        $formatted_data = is_array($submitted_data)
-            ? json_encode($submitted_data)
-            : 'Données non disponibles';
+        $form_title = $form ? $form->post_title : 'Formulaire supprimé';
+        
+        // Décoder les données JSON stockées
+        $stored_data = json_decode($submission->submitted_data, true);
+        $data_string = '';
+        
+        // Vérifier si les données sont dans le bon format
+        if (isset($stored_data['data']) && isset($stored_data['iv'])) {
+            // Décoder l'IV
+            $iv = base64_decode($stored_data['iv']);
+            
+            // Déchiffrer les données
+            $decrypted_data = openssl_decrypt(
+                $stored_data['data'],
+                'AES-256-CBC',
+                FM_ENCRYPTION_KEY,
+                0,
+                $iv
+            );
+            
+            // Décoder les données JSON déchiffrées
+            $submitted_data = json_decode($decrypted_data, true);
+            
+            // Convertir les données déchiffrées en une chaîne lisible
+            if (is_array($submitted_data)) {
+                foreach ($submitted_data as $key => $value) {
+                    if ($key === 'uploaded_files' && is_array($value) && !empty($value)) {
+                        $data_string .= "Fichiers uploadés: " . implode(', ', $value) . "; ";
+                    } elseif ($key !== 'uploaded_files') {
+                        $data_string .= "{$key}: {$value}; ";
+                    }
+                }
+            }
+        } else {
+            $data_string = 'Erreur lors du déchiffrement des données';
+        }
 
+        // Ajouter une ligne pour chaque soumission
         fputcsv($output, [
             $submission->id,
-            $form ? $form->post_title : 'Formulaire supprimé',
-            $formatted_data,
-            $submission->submitted_at
+            $form_title,
+            $data_string,
+            $submission->submitted_at,
+            $submission->status
         ]);
     }
 

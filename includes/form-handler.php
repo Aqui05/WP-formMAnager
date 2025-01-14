@@ -247,8 +247,8 @@ function fm_display_form($atts) {
                     switch ($field['type']) {
                         case 'textarea':
                             ?>
-                            <textarea id="fm_<?php echo esc_attr($field['name']); ?>" 
-                                    name="fm_<?php echo esc_attr($field['name']); ?>" 
+                            <textarea id="<?php echo esc_attr($field['name']); ?>" 
+                                    name="<?php echo esc_attr($field['name']); ?>" 
                                     class="fm-textarea"
                                     required></textarea>
                             <?php
@@ -257,8 +257,8 @@ function fm_display_form($atts) {
                         case 'select':
                             $options = explode(',', $field['options'] ?? '');
                             ?>
-                            <select id="fm_<?php echo esc_attr($field['name']); ?>" 
-                                    name="fm_<?php echo esc_attr($field['name']); ?>" 
+                            <select id="<?php echo esc_attr($field['name']); ?>" 
+                                    name="<?php echo esc_attr($field['name']); ?>" 
                                     class="fm-select"
                                     required>
                                 <?php foreach ($options as $option): ?>
@@ -293,7 +293,7 @@ function fm_display_form($atts) {
                                 foreach ($options as $option): ?>
                                     <label>
                                         <input type="checkbox" 
-                                               name="fm_<?php echo esc_attr($field['name']); ?>[]" 
+                                               name="<?php echo esc_attr($field['name']); ?>[]" 
                                                value="<?php echo esc_attr(trim($option)); ?>">
                                         <?php echo esc_html(trim($option)); ?>
                                     </label>
@@ -303,18 +303,94 @@ function fm_display_form($atts) {
                             case 'number': // Champ numérique
                                 ?>
                                 <input type="number" 
-                                       id="fm_<?php echo esc_attr($field['name']);?>" 
-                                       name="fm_<?php echo esc_attr($field['name']);?>" 
+                                       id="<?php echo esc_attr($field['name']);?>" 
+                                       name="<?php echo esc_attr($field['name']);?>" 
                                        class="fm-number"
                                        required>
                                 <?php
                                 break;    
+
+
+                            case 'date': // Champ de date
+                                ?>
+                                <input type="date" 
+                                       id="<?php echo esc_attr($field['name']);?>" 
+                                       name="<?php echo esc_attr($field['name']);?>" 
+                                       class="fm-date"
+                                       required>
+                                <?php
+                                break;
+
+
+                            case 'time': // Champ d'heure
+                                ?>
+                                <input type="time" 
+                                       id="<?php echo esc_attr($field['name']);?>" 
+                                       name="<?php echo esc_attr($field['name']);?>" 
+                                       class="fm-time"
+                                       required>
+                                <?php
+                                break;
+
+
+                            case 'url': // Champ d'URL
+                                ?>
+                                <input type="url" 
+                                       id="<?php echo esc_attr($field['name']);?>" 
+                                       name="<?php echo esc_attr($field['name']);?>" 
+                                       class="fm-url"
+                                       required>
+                                <?php
+                                break;
+
+
+                            case 'tel': // Champ de téléphone
+                                ?>
+                                <input type="tel" 
+                                       id="<?php echo esc_attr($field['name']);?>" 
+                                       name="<?php echo esc_attr($field['name']);?>" 
+                                       class="fm-tel"
+                                       required>
+                                <?php
+                                break;
+
+                            case 'password': // Champ de mot de passe
+                                ?>
+                                <input type="password" 
+                                       id="<?php echo esc_attr($field['name']);?>" 
+                                       name="<?php echo esc_attr($field['name']);?>" 
+                                       class="fm-password"
+                                       required>
+                                <?php
+                                break;
+
+                            case 'image': // Champ d'image
+                                ?>
+                                <input type="file" 
+                                       id="<?php echo esc_attr($field['name']);?>" 
+                                       name="<?php echo esc_attr($field['name']);?>" 
+                                       class="fm-image"
+                                       accept="image/*"
+                                       required>
+                                <?php
+                                break;
+
+
+                            case 'email': // Champ d'adresse électronique
+                                ?>
+                                <input type="email" 
+                                       id="<?php echo esc_attr($field['name']);?>" 
+                                       name="<?php echo esc_attr($field['name']);?>" 
+                                       class="fm-email"
+                                       required>
+                                <?php
+                                break;
         
                             case 'file': // Téléchargement de fichiers
                                 ?>
                                 <input type="file" 
-                                       id="fm_<?php echo esc_attr($field['name']); ?>" 
-                                       name="fm_<?php echo esc_attr($field['name']); ?>" 
+                                       id="<?php echo esc_attr($field['name']); ?>" 
+                                       name="<?php echo esc_attr($field['name']); ?>" 
                                        required>
                                 <?php
                                 break;
@@ -338,8 +414,8 @@ function fm_display_form($atts) {
                                            style="width: 100%; margin-bottom: 10px;">
                                     
                                     <input type="text" 
-                                           id="fm_<?php echo esc_attr($field['name']); ?>" 
-                                           name="fm_<?php echo esc_attr($field['name']); ?>" 
+                                           id="<?php echo esc_attr($field['name']); ?>" 
+                                           name="<?php echo esc_attr($field['name']); ?>" 
                                            class="map-coordinates"
                                            placeholder="Latitude, Longitude"
                                            readonly>
@@ -410,8 +486,8 @@ function fm_display_form($atts) {
                         default:
                             ?>
                             <input type="<?php echo esc_attr($field['type']); ?>" 
-                                   id="fm_<?php echo esc_attr($field['name']); ?>" 
-                                   name="fm_<?php echo esc_attr($field['name']); ?>" 
+                                   id="<?php echo esc_attr($field['name']); ?>" 
+                                   name="<?php echo esc_attr($field['name']); ?>" 
                                    class="fm-input"
                                    required>
                             <?php
@@ -579,6 +655,24 @@ function fm_handle_submission() {
             exit;
         }
 
+        // Récupération des champs du formulaire
+        $fields = get_post_meta($form_id, '_fm_form_fields', true);
+        if (empty($fields)) {
+            fm_set_message('error', 'Le formulaire n\'est pas configuré correctement.');
+            wp_redirect(add_query_arg('fm_error', 'form_not_configured', wp_get_referer()));
+            exit;
+        }
+
+        // Vérification des champs obligatoires
+        foreach ($fields as $field) {
+            $field_name = sanitize_text_field($field['name']);
+            if (empty($_POST[$field_name])) {
+                fm_set_message('error', 'Tous les champs du formulaire doivent être remplis. Veuillez réessayer.');
+                wp_redirect(add_query_arg('fm_error', 'missing_fields', wp_get_referer()));
+                exit;
+            }
+        }
+
         // Vérification du reCAPTCHA
         $recaptcha_secret = '6LdifKYqAAAAAG7s49WzjqhQ9kinCF-bGFfpPb_N';
         $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
@@ -596,9 +690,9 @@ function fm_handle_submission() {
         $result = json_decode($response_body, true);
 
         if (empty($result['success'])) {
-            //fm_set_message('error', 'La vérification CAPTCHA a échoué. Veuillez réessayer.');
-            //wp_redirect(add_query_arg('fm_error', 'captcha_failed', wp_get_referer()));
-            //exit;
+            fm_set_message('error', 'La vérification CAPTCHA a échoué. Veuillez réessayer.');
+            wp_redirect(add_query_arg('fm_error', 'captcha_failed', wp_get_referer()));
+            exit;
         }
 
         // Récupération des données soumises
@@ -696,6 +790,7 @@ function fm_handle_submission() {
         exit;
     }
 }
+
 
 
 
@@ -911,132 +1006,275 @@ add_action('admin_menu', 'fm_register_admin_page');*/
     echo '</table>';
 }*/
 
+?>
 
 
-/***
+<style>
 
 .fm-form {
     max-width: 600px;
     margin: 20px auto;
     padding: 25px;
     border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    background-color: #ffffff;
 }
 
-.fm-form label {
+.fm-form-title {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+
+.fm-form-field {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+*
+.fm-form-label {
     font-weight: 600;
     margin-bottom: 8px;
     display: block;
     color: #333;
-}
-
-// Style des champs de texte 
-.fm-form input[type="text"],
-.fm-form input[type="email"],
-.fm-form input[type="number"],
-.fm-form textarea {
-    width: 100%;
-    padding: 12px;
-    margin-bottom: 15px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-    transition: all 0.3s ease;
-}
-
-//* Effet au focus des champs de texte
-.fm-form input:focus,
-.fm-form textarea:focus {
-    outline: none;
-    border-color: #4CAF50;
-    box-shadow: 0 0 5px rgba(76,175,80,0.2);
-}
-
-// Style des listes déroulantes 
-.fm-form select {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 15px;
-    border-radius: 4px;
-    background-color: white;
-    cursor: pointer;
-}
-
-
-.fm-form input[type="checkbox"],
-.fm-form input[type="radio"] {
-    margin-right: 8px;
-}
-
-.fm-form input[type="checkbox"] + label,
-.fm-form input[type="radio"] + label {
-    display: inline-block;
-    margin-right: 15px;
-}
-
-
-.fm-form button[type="submit"] {
-    width: 100%;
-    padding: 12px 20px;
-    font-size: 16px;
-    font-weight: 600;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.fm-form button[type="submit"]:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-
-
-.fm-form .error-message {
-    color: #dc3545;
     font-size: 14px;
-    margin-top: -10px;
-    margin-bottom: 10px;
 }
 
-
-.fm-form .required:after {
+.fm-form-label.required::after {
     content: "*";
     color: #dc3545;
     margin-left: 4px;
 }
 
+.fm-input,
+.fm-textarea,
+.fm-select,
+.fm-number,
+.fm-email,
+.fm-tel,
+.fm-url,
+.fm-password,
+input[type="date"],
+input[type="time"] {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    background-color: #fff;
+}
 
+/* Focus pour tous les champs */
+.fm-input:focus,
+.fm-textarea:focus,
+.fm-select:focus,
+.fm-number:focus,
+.fm-email:focus,
+.fm-tel:focus,
+.fm-url:focus,
+.fm-password:focus,
+input[type="date"]:focus,
+input[type="time"]:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.2);
+}
+
+/* Style spécifique pour textarea */
+.fm-textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+/* Style pour les select */
+.fm-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url('data:image/svg+xml;utf8,<svg fill="black" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 30px;
+}
+
+/* Groupe de radio boutons et checkboxes */
+.fm-radio-group,
+.fm-checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+/* Style pour radio et checkbox */
+.fm-radio-label,
+.fm-checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: normal;
+}
+
+.fm-radio,
+.fm-checkbox {
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+/* Style pour les champs de type file */
+.fm-image,
+input[type="file"] {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 2px dashed #ddd;
+    border-radius: 4px;
+    background: #f8f8f8;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.fm-image:hover,
+input[type="file"]:hover {
+    border-color: #4CAF50;
+    background: #f0f8f0;
+}
+
+/* Style pour le conteneur reCAPTCHA */
+#recaptcha-container {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+/* Bouton d'envoi */
+.fm-submit-button {
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+    background-color: #4CAF50;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.fm-submit-button:hover {
+    background-color: #45a049;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.fm-submit-button:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* Messages d'erreur */
+.fm-error-message {
+    color: #dc3545;
+    font-size: 14px;
+    margin-top: 4px;
+    display: none;
+}
+
+.fm-form-field.error input,
+.fm-form-field.error select,
+.fm-form-field.error textarea {
+    border-color: #dc3545;
+    background-color: #fff8f8;
+}
+
+.fm-form-field.error .fm-form-label {
+    color: #dc3545;
+}
+
+.fm-form-errors {
+    background-color: #fff8f8;
+    border: 1px solid #dc3545;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.fm-error {
+    color: #dc3545;
+    margin: 5px 0;
+}
+
+/* Style pour le champ Map */
+.map-container {
+    margin-bottom: 20px;
+}
+
+.map-search-input {
+    margin-bottom: 10px;
+}
+
+.map-coordinates {
+    background-color: #f8f8f8 !important;
+    font-family: monospace;
+}
+
+/* Responsive Design */
 @media (max-width: 480px) {
     .fm-form {
         padding: 15px;
+        margin: 10px;
     }
-    
-    .fm-form input[type="checkbox"] + label,
-    .fm-form input[type="radio"] + label {
-        display: block;
-        margin-bottom: 10px;
+
+    .fm-submit-button {
+        padding: 12px 15px;
+    }
+
+    .fm-radio-group,
+    .fm-checkbox-group {
+        gap: 8px;
+    }
+
+    .fm-form-field {
+        margin-bottom: 15px;
     }
 }
 
 
-.fm-form .field-group {
-    margin-bottom: 20px;
-    padding: 15px;
-    background: rgba(0,0,0,0.02);
-    border-radius: 4px;
+.fm-input:disabled,
+.fm-textarea:disabled,
+.fm-select:disabled,
+.fm-radio:disabled,
+.fm-checkbox:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+    opacity: 0.7;
 }
 
-
-.fm-form input[type="file"] {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 15px;
-    border: 1px dashed #ddd;
-    border-radius: 4px;
-    background: #f8f8f8;
+.fm-submit-button.loading {
+    position: relative;
+    color: transparent;
 }
 
+.fm-submit-button.loading::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 3px solid #ffffff;
+    border-top: 3px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
 
-.fm-form #recaptcha-container {
-    margin-bottom: 20px;
-} 
-*/
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+</style>

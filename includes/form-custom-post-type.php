@@ -169,6 +169,9 @@ function fm_render_form_fields_metabox($post) {
                     <option value="textarea" <?php selected($field['type'], 'textarea'); ?>>Texte (multi-lignes)</option>
                     <option value="email" <?php selected($field['type'], 'email'); ?>>Email</option>
                     <option value="number" <?php selected($field['type'], 'number'); ?>>Numéro</option>
+                    <option value="date" <?php selected($field['type'], 'date'); ?>>Date</option>
+                    <option value="url" <?php selected($field['type'], 'url'); ?>>URL</option>
+                    <option value="password" <?php selected($field['type'], 'password'); ?>>Mot de passe</option>
                     <option value="map" <?php selected($field['type'], 'map'); ?>>Localisation (Google Maps)</option>
                     <option value="select" <?php selected($field['type'], 'select'); ?>>Liste déroulante</option>
                     <option value="radio" <?php selected($field['type'], 'radio'); ?>>Boutons radio</option>
@@ -203,6 +206,10 @@ function fm_render_form_fields_metabox($post) {
                             <option value="text">Texte (simple ligne)</option>
                             <option value="textarea">Texte (multi-lignes)</option>
                             <option value="email">Email</option>
+                            <option value="number">Numéro</option>
+                            <option value="date">Date</option>
+                            <option value="url">URL</option>
+                            <option value="password">Mot de passe</option>
                             <option value="tel">Téléphone</option>
                             <option value="map">Localisation (Google Maps)</option>
                             <option value="select">Liste déroulante</option>
@@ -210,6 +217,7 @@ function fm_render_form_fields_metabox($post) {
                             <option value="checkbox">Cases à cocher</option>
                             <option value="file">Téléchargement de fichiers</option>
                             <option value="captcha">CAPTCHA/Recaptcha</option>
+
                         </select>
                         <label>Nom du champ :</label>
                         <input type="text" name="fm_form_fields[${fieldIndex}][name]" />

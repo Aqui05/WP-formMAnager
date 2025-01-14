@@ -1,6 +1,6 @@
 
 .fm-form {
-    padding: 20px;
+    padding: 200px;
     border-radius: 4px;
     margin-bottom: 20px;
 }
@@ -25,7 +25,7 @@
     padding: 10px 20px;
     border-radius: 4px;
     cursor: pointer;
-    border: none;
+    border: 1px slateblue solid;;
     transition: background-color 0.3s ease;
 }
 
